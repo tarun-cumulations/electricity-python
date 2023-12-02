@@ -4,8 +4,11 @@ from flask import Flask, request, jsonify
 import psycopg2
 import os
 from dotenv import load_dotenv 
+from flask_cors import CORS
 load_dotenv()
 app = Flask(__name__)
+
+cors = CORS(app)
 
 # Database connection parameters
 db_params = {
