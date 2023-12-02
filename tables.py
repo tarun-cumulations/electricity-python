@@ -1,12 +1,17 @@
 import psycopg2
 from psycopg2 import sql
+import os
+from dotenv import load_dotenv 
+
+
+load_dotenv()
 
 
 db_params = {
-    'dbname': 'postgres', 
-    'user': 'postgres', 
-    'password': 'postgres', 
-    'host': 'postgres.cox4boq5aldo.ap-south-1.rds.amazonaws.com' 
+    'dbname': os.getenv('DB_NAME'),
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASS'),
+    'host': os.getenv('DB_HOST')
 }
 
 

@@ -1,13 +1,19 @@
 import psycopg2
 from datetime import datetime
+import os
+from dotenv import load_dotenv 
 
-# Database connection parameters
+
+load_dotenv()
+
+
 db_params = {
-    'dbname': 'postgres', 
-    'user': 'postgres', 
-    'password': 'postgres', 
-    'host': 'postgres.cox4boq5aldo.ap-south-1.rds.amazonaws.com' 
+    'dbname': os.getenv('DB_NAME'),
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASS'),
+    'host': os.getenv('DB_HOST')
 }
+
 
 
 # # Sample data to be inserted
