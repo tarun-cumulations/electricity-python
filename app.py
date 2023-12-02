@@ -222,8 +222,10 @@ def get_applications():
 def edit_application(id):
     data = request.json
 
-    if 'load_applied' in data and data['load_applied'] > 200:
-        return jsonify({'error': 'Load applied should not exceed 200 KV'}), 400
+    if 'load_applied' in data:
+            load_applied = int(data['load_applied'])
+            if load_applied > 200:
+                return jsonify({'error': 'Load applied should not exceed 200 KV'}), 400
 
     # Fields that should not be changed
     immutable_fields = ['date_of_application', 'govtid_type', 'id_number']
