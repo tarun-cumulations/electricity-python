@@ -71,6 +71,79 @@ def filter_applications():
 
 # http://127.0.0.1:5000/applications
 
+# @app.route('/applications', methods=['GET'])
+# def get_applications():
+#     page = request.args.get('page', 1, type=int)
+#     per_page = request.args.get('per_page', 10, type=int)
+
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     offset = (page - 1) * per_page
+
+#     cursor.execute('SELECT COUNT(*) FROM application')
+#     total = cursor.fetchone()[0]
+
+#     cursor.execute('SELECT * FROM application ORDER BY application_id LIMIT %s OFFSET %s', (per_page, offset))
+#     applications = cursor.fetchall()
+
+#     cursor.close()
+#     conn.close()
+
+#     return jsonify({
+#         'total': total,
+#         'page': page,
+#         'per_page': per_page,
+#         'data': applications
+#     })
+
+
+# @app.route('/applications', methods=['GET'])
+# def get_applications():
+#     page = request.args.get('page', 1, type=int)
+#     per_page = request.args.get('per_page', 10, type=int)
+
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     offset = (page - 1) * per_page
+
+#     cursor.execute('SELECT COUNT(*) FROM application')
+#     total = cursor.fetchone()[0]
+
+#     cursor.execute("""
+#         SELECT app.application_id, app.applicant_id, app.category, app.load_applied, app.date_of_application, app.date_of_approval, app.modified_date, app.status, ap.govtid_type
+#         FROM application app
+#         JOIN applicant ap ON app.applicant_id = ap.applicant_id
+#         ORDER BY app.application_id 
+#         LIMIT %s OFFSET %s
+#     """, (per_page, offset))
+#     applications = cursor.fetchall()
+
+#     cursor.close()
+#     conn.close()
+
+#     applications_data = [
+#         {
+#             "application_id": app[0],
+#             "applicant_id": app[1],
+#             "category": app[2],
+#             "load_applied": app[3],
+#             "date_of_application": app[4],
+#             "date_of_approval": app[5],
+#             "modified_date": app[6],
+#             "status": app[7],
+#             "govt_id_type": app[8]
+#         }
+#         for app in applications
+#     ]
+
+#     return jsonify({
+#         'total': total,
+#         'page': page,
+#         'per_page': per_page,
+#         'data': applications_data
+#     })
+
+
 @app.route('/applications', methods=['GET'])
 def get_applications():
     page = request.args.get('page', 1, type=int)
@@ -83,18 +156,101 @@ def get_applications():
     cursor.execute('SELECT COUNT(*) FROM application')
     total = cursor.fetchone()[0]
 
-    cursor.execute('SELECT * FROM application ORDER BY application_id LIMIT %s OFFSET %s', (per_page, offset))
+    cursor.execute("""
+        SELECT app.application_id, app.applicant_id, ap.applicant_name, app.category, app.load_applied, 
+               app.date_of_application, app.date_of_approval, app.modified_date, app.status, 
+               ap.govtid_type, rev.review_id, revr.reviewer_name
+        FROM application app
+        JOIN applicant ap ON app.applicant_id = ap.applicant_id
+        LEFT JOIN review rev ON app.application_id = rev.application_id
+        LEFT JOIN reviewer revr ON rev.reviewer_id = revr.reviewer_id
+        ORDER BY app.application_id 
+        LIMIT %s OFFSET %s
+    """, (per_page, offset))
     applications = cursor.fetchall()
 
     cursor.close()
     conn.close()
 
+    applications_data = [
+        {
+            "application_id": app[0],
+            "applicant_id": app[1],
+            "applicant_name": app[2],  # Added applicant_name
+            "category": app[3],
+            "load_applied": app[4],
+            "date_of_application": app[5].strftime("%Y-%m-%d") if app[5] else None,
+            "date_of_approval": app[6].strftime("%Y-%m-%d") if app[6] else None,
+            "modified_date": app[7].strftime("%Y-%m-%d") if app[7] else None,
+            "status": app[8],
+            "govt_id_type": app[9],
+            "review_id": app[10],
+            "reviewer_name": app[11]
+        }
+        for app in applications
+    ]
+
     return jsonify({
         'total': total,
         'page': page,
         'per_page': per_page,
-        'data': applications
+        'data': applications_data
     })
+
+
+
+
+# @app.route('/applications', methods=['GET'])
+# def get_applications():
+#     page = request.args.get('page', 1, type=int)
+#     per_page = request.args.get('per_page', 10, type=int)
+
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+#     offset = (page - 1) * per_page
+
+#     cursor.execute('SELECT COUNT(*) FROM application')
+#     total = cursor.fetchone()[0]
+
+#     cursor.execute("""
+#         SELECT app.application_id, app.applicant_id, app.category, app.load_applied, app.date_of_application, 
+#                app.date_of_approval, app.modified_date, app.status, ap.govtid_type, 
+#                rev.review_id, revr.reviewer_name
+#         FROM application app
+#         JOIN applicant ap ON app.applicant_id = ap.applicant_id
+#         LEFT JOIN review rev ON app.application_id = rev.application_id
+#         LEFT JOIN reviewer revr ON rev.reviewer_id = revr.reviewer_id
+#         ORDER BY app.application_id 
+#         LIMIT %s OFFSET %s
+#     """, (per_page, offset))
+#     applications = cursor.fetchall()
+
+#     cursor.close()
+#     conn.close()
+
+#     applications_data = [
+#         {
+#             "application_id": app[0],
+#             "applicant_id": app[1],
+#             "category": app[2],
+#             "load_applied": app[3],
+#             "date_of_application": app[4],
+#             "date_of_approval": app[5],
+#             "modified_date": app[6],
+#             "status": app[7],
+#             "govt_id_type": app[8],
+#             "review_id": app[9],
+#             "reviewer_name": app[10]
+#         }
+#         for app in applications
+#     ]
+
+#     return jsonify({
+#         'total': total,
+#         'page': page,
+#         'per_page': per_page,
+#         'data': applications_data
+#     })
 
 
 # for below API 

@@ -150,18 +150,20 @@ db_params = {
 
 # Sample data to be inserted
 applicants = [
-    ("Michael Johnson", "Male", "Central", "Delhi", 110001, "Individual", "Aadhar", "111122223333"),
-    ("Sara Khan", "Female", "North", "Delhi", 110005, "Individual", "Voter ID", "BBBCC1234"),
-    ("Raj Malhotra", "Male", "South", "Delhi", 110017, "Joint", "PAN", "ABCDE1234F"),
-    ("Anita Desai", "Female", "East", "Delhi", 110019, "Individual", "Passport", "K12345678")
+    ("Amanoj", "Male", "Central", "Delhi", 110021, "Individual", "Aadhar", "AADHAR1237"),
+    ("sharadha", "Female", "North", "Delhi", 110022, "Joint", "Voter ID", "VOTER1238"),
+    ("Acikas", "Male", "South", "Delhi", 110023, "Individual", "Aadhar", "AADHAR1239"),
+    ("vimala", "Female", "East", "Delhi", 110024, "Individual", "Voter ID", "VOTER1240")
 ]
 
+
 applications = [
-    (1, "Residential", 10, datetime(2021, 1, 15), datetime(2021, 1, 20), datetime(2021, 1, 18), "Approved"),
-    (2, "Commercial", 20, datetime(2021, 2, 5), None, datetime(2021, 2, 7), "Pending"),
-    (3, "Industrial", 50, datetime(2021, 3, 10), None, datetime(2021, 3, 12), "Pending"),
-    (4, "Residential", 15, datetime(2021, 4, 1), datetime(2021, 4, 5), datetime(2021, 4, 3), "Denied")
+    (7, "Residential", 10, datetime(2021, 1, 15), datetime(2021, 1, 20), datetime(2021, 1, 18), "Approved"),
+    (8, "Commercial", 15, datetime(2021, 2, 10), None, datetime(2021, 2, 12), "Pending"),
+    (9, "Commercial", 200, datetime(2021, 1, 15), datetime(2021, 1, 20), datetime(2021, 1, 18), "Pending"),
+    (10, "Commercial", 15, datetime(2021, 2, 10), None, datetime(2021, 2, 12), "Pending")
 ]
+
 
 reviewers = [
     ("Rajesh Kumar",),
@@ -172,39 +174,45 @@ reviewers = [
 
 
 reviews = [
-    (1, 1, "Application complete and approved."),
-    (2, 2, "Application pending, awaiting additional documentation."),
-    (3, 3, "Application under review, site inspection pending."),
-    (4, 4, "Application denied due to non-compliance.")
+    (5, 1, "Application complete and approved."),
+    (6, 2, "Application pending, awaiting additional documentation."),
+    (7, 3, "Application under review, site inspection pending."),
+    (8, 4, "Application pending further review.")
 ]
+
 
 # Connect to the database
 conn = psycopg2.connect(**db_params)
 cursor = conn.cursor()
 
 try:
-    # Insert data into applicant table and retrieve the generated IDs
-    applicant_ids = []
+    # Insert data into the applicant table
     for applicant in applicants:
         cursor.execute("""
             INSERT INTO applicant (applicant_name, gender, district, state, pincode, ownership, govtid_type, id_number)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING applicant_id;
         """, applicant)
-        applicant_ids.append(cursor.fetchone()[0])
 
-    # Insert data into application table
+    # Insert data into the application table
     for application in applications:
         cursor.execute("""
             INSERT INTO application (applicant_id, category, load_applied, date_of_application, date_of_approval, modified_date, status)
             VALUES (%s, %s, %s, %s, %s, %s, %s);
-        """, (applicant_ids[application[0]-1],) + application[1:])
+        """, application)
 
-    # Insert data into reviewer table
+    # Insert data into the reviewer table
     for reviewer in reviewers:
         cursor.execute("""
             INSERT INTO reviewer (reviewer_name)
             VALUES (%s);
         """, reviewer)
+
+    # Insert data into the review table
+    for review in reviews:
+        cursor.execute("""
+            INSERT INTO review (application_id, reviewer_id, reviewer_comments)
+            VALUES (%s, %s, %s);
+        """, review)
 
     # Commit the transaction
     conn.commit()
