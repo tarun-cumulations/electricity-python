@@ -24,6 +24,25 @@ def get_db_connection():
 
 #  http://127.0.0.1:5000/applications/search?applicantId=7
 
+# @app.route('/applications/search', methods=['GET'])
+# def search_applications():
+#     applicant_id = request.args.get('applicantId', type=int)
+
+#     if not applicant_id:
+#         return jsonify({'error': 'Applicant ID is required'}), 400
+
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+
+#     cursor.execute('SELECT * FROM application WHERE applicant_id = %s', (applicant_id,))
+#     applications = cursor.fetchall()
+
+#     cursor.close()
+#     conn.close()
+
+#     return jsonify(applications)
+
+
 @app.route('/applications/search', methods=['GET'])
 def search_applications():
     applicant_id = request.args.get('applicantId', type=int)
@@ -31,16 +50,50 @@ def search_applications():
     if not applicant_id:
         return jsonify({'error': 'Applicant ID is required'}), 400
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-    cursor.execute('SELECT * FROM application WHERE applicant_id = %s', (applicant_id,))
-    applications = cursor.fetchall()
+        cursor.execute("""
+            SELECT app.application_id, app.applicant_id, ap.applicant_name, app.category, app.load_applied, 
+                   app.date_of_application, app.date_of_approval, app.modified_date, app.status, 
+                   ap.govtid_type, rev.review_id, revr.reviewer_name, rev.reviewer_comments
+            FROM application app
+            JOIN applicant ap ON app.applicant_id = ap.applicant_id
+            LEFT JOIN review rev ON app.application_id = rev.application_id
+            LEFT JOIN reviewer revr ON rev.reviewer_id = revr.reviewer_id
+            WHERE app.applicant_id = %s
+            ORDER BY app.application_id
+        """, (applicant_id,))
+        applications = cursor.fetchall()
 
-    cursor.close()
-    conn.close()
+        cursor.close()
+        conn.close()
 
-    return jsonify(applications)
+        applications_data = [
+            {
+                "application_id": app[0],
+                "applicant_id": app[1],
+                "applicant_name": app[2],
+                "category": app[3],
+                "load_applied": app[4],
+                "date_of_application": app[5].strftime("%Y-%m-%d") if app[5] else None,
+                "date_of_approval": app[6].strftime("%Y-%m-%d") if app[6] else None,
+                "modified_date": app[7].strftime("%Y-%m-%d") if app[7] else None,
+                "status": app[8],
+                "govt_id_type": app[9],
+                "review_id": app[10],
+                "reviewer_name": app[11],
+                "reviewer_comments": app[12]
+            }
+            for app in applications
+        ]
+
+        return jsonify(applications_data)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 
 
@@ -334,9 +387,39 @@ def get_applications():
 # }
 
 
+# @app.route('/applications/edit/<int:id>', methods=['PUT'])
+# def edit_application(id):
+#     data = request.json
+#     if 'load_applied' in data and data['load_applied'] > 200:
+#         return jsonify({'error': 'Load applied should not exceed 200 KV'}), 400
+
+#     # Fields that should not be changed
+#     immutable_fields = ['date_of_application', 'govtid_type', 'id_number']
+#     if any(field in data for field in immutable_fields):
+#         return jsonify({'error': 'Some fields cannot be changed'}), 400
+
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+
+#     columns = ', '.join([f"{key} = %s" for key in data])
+#     values = list(data.values()) + [id]
+
+#     query = f'UPDATE application SET {columns} WHERE application_id = %s'
+#     cursor.execute(query, values)
+
+#     conn.commit()
+
+#     cursor.close()
+#     conn.close()
+
+#     return jsonify({'success': 'Application updated successfully'})
+
+
+
 @app.route('/applications/edit/<int:id>', methods=['PUT'])
 def edit_application(id):
     data = request.json
+
     if 'load_applied' in data and data['load_applied'] > 200:
         return jsonify({'error': 'Load applied should not exceed 200 KV'}), 400
 
@@ -345,21 +428,44 @@ def edit_application(id):
     if any(field in data for field in immutable_fields):
         return jsonify({'error': 'Some fields cannot be changed'}), 400
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-    columns = ', '.join([f"{key} = %s" for key in data])
-    values = list(data.values()) + [id]
+        # Update fields in the application table
+        application_fields = ['category', 'load_applied', 'date_of_approval', 'modified_date', 'status']
+        application_data = {key: data[key] for key in application_fields if key in data}
+        if application_data:
+            columns = ', '.join([f"{key} = %s" for key in application_data])
+            values = list(application_data.values()) + [id]
+            cursor.execute(f'UPDATE application SET {columns} WHERE application_id = %s', values)
 
-    query = f'UPDATE application SET {columns} WHERE application_id = %s'
-    cursor.execute(query, values)
+        # Update fields in the applicant table
+        applicant_fields = ['applicant_name', 'gender', 'district', 'state', 'pincode', 'ownership']
+        applicant_data = {key: data[key] for key in applicant_fields if key in data}
+        if applicant_data:
+            columns = ', '.join([f"{key} = %s" for key in applicant_data])
+            values = list(applicant_data.values()) + [id]
+            cursor.execute(f'UPDATE applicant SET {columns} WHERE applicant_id = (SELECT applicant_id FROM application WHERE application_id = %s)', values + [id])
 
-    conn.commit()
+        review_fields = ['reviewer_comments']
+        review_data = {key: data[key] for key in review_fields if key in data}
+        if review_data:
+            columns = ', '.join([f"{key} = %s" for key in review_data])
+            values = list(review_data.values()) + [id]
+            cursor.execute(f'UPDATE review SET {columns} WHERE application_id = %s', values)
 
-    cursor.close()
-    conn.close()
+        conn.commit()
+        return jsonify({'success': 'Application updated successfully'})
 
-    return jsonify({'success': 'Application updated successfully'})
+    except Exception as e:
+        print(f"An error occurred: {e}")  
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
+
 
 
 
