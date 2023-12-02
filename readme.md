@@ -14,6 +14,10 @@
 
 ### Setup a .env file with database credentials like DB_HOST , DB_PASS , DB_USER and DB_NAME
 
+### To create tables in the postgres DB, execute tables.py
+
+### To add data to the tables , execute addDataToTables.py
+
 ## API Endpoints
 
 ### Get Applications
@@ -63,5 +67,8 @@
     Query Parameters:
         status (optional): The status of the applications to filter by (e.g., 'Pending', 'Approved'). Default is 'All'.
     Example Request: GET /applications/stats?status=Pending
+
+
+
 
 
