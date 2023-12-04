@@ -164,10 +164,10 @@ applicants = [
 
 
 applications = [
-    (7, "Residential", 10, datetime(2021, 1, 15), datetime(2021, 1, 20), datetime(2021, 1, 18), "Approved"),
-    (8, "Commercial", 15, datetime(2021, 2, 10), None, datetime(2021, 2, 12), "Pending"),
-    (9, "Commercial", 200, datetime(2021, 1, 15), datetime(2021, 1, 20), datetime(2021, 1, 18), "Pending"),
-    (10, "Commercial", 15, datetime(2021, 2, 10), None, datetime(2021, 2, 12), "Pending")
+    (1, "Residential", 10, datetime(2021, 1, 15), datetime(2021, 1, 20), datetime(2021, 1, 18), "Approved"),
+    (2, "Commercial", 15, datetime(2021, 2, 10), None, datetime(2021, 2, 12), "Pending"),
+    (3, "Commercial", 200, datetime(2021, 1, 15), datetime(2021, 1, 20), datetime(2021, 1, 18), "Pending"),
+    (4, "Commercial", 15, datetime(2021, 2, 10), None, datetime(2021, 2, 12), "Pending")
 ]
 
 
